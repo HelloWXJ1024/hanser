@@ -5,7 +5,7 @@ from typing import Sequence, Mapping, Optional
 import pickle
 
 import tensorflow as tf
-import tensorflow.keras.mixed_precision.experimental as mixed_precision
+import tensorflow.keras.mixed_precision as mixed_precision
 from tensorflow.keras.metrics import Metric, Mean
 
 from hhutil.io import fmt_path, eglob, rm, time_now
@@ -96,7 +96,7 @@ class Learner(metaclass=ABCMeta):
         self.dtype = tf.dtypes.as_dtype(mixed_precision.global_policy().compute_dtype)
         if self.dtype == tf.float16:
             self.optimizers = [
-                mixed_precision.LossScaleOptimizer(optimizer, 'dynamic')
+                mixed_precision.LossScaleOptimizer(optimizer)
                 if not isinstance(optimizer, mixed_precision.LossScaleOptimizer) else optimizer
                 for optimizer in self.optimizers
             ]
@@ -310,17 +310,17 @@ class Learner(metaclass=ABCMeta):
             strategy_run(self._strategy, self.local_eval_batch, (batch,)), self._strategy)
 
     def _run_steps(self, step_fn, iterator, n_batches_per_step, n_steps, callbacks, state):
-        state['step'].assign(-1)
+        # state['step'].assign(-1)
         for i in tf.range(n_steps):
-            state['step'].assign_add(1)
-            callbacks.begin_batch(state)
+            # state['step'].assign_add(1)
+            # callbacks.begin_batch(state)
             if n_batches_per_step is not None:
                 batches = tuple(next(iterator) for bi in range(n_batches_per_step))
                 step_fn(batches)
             else:
                 batch = next(iterator)
                 step_fn(batch)
-            callbacks.after_batch(state)
+            # callbacks.after_batch(state)
 
     def _run_epoch(self, iterator, steps, callbacks, mode):
         state = self._state[mode]
