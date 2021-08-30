@@ -9,7 +9,8 @@ def make_repeat_fn(n):
 
 def prepare(ds: tf.data.Dataset, batch_size, transform=None, training=True, buffer_size=1024,
             drop_remainder=None, cache=True, repeat=True, prefetch=True,
-            zip_transform=None, batch_transform=None, aug_repeats=None):
+            zip_transform=None, batch_transform=None, aug_repeats=None,
+            parallel_batch=False):
 
     if drop_remainder is None:
         drop_remainder = training
@@ -29,11 +30,13 @@ def prepare(ds: tf.data.Dataset, batch_size, transform=None, training=True, buff
     if training:
         if zip_transform:
             ds = tf.data.Dataset.zip((ds, ds)).map(zip_transform, num_parallel_calls=tf.data.AUTOTUNE)
-        ds = ds.batch(batch_size, drop_remainder=drop_remainder)
+        ds = ds.batch(batch_size, drop_remainder=drop_remainder, deterministic=False,
+                      num_parallel_calls=tf.data.AUTOTUNE if parallel_batch else None)
         if batch_transform:
             ds = ds.map(batch_transform, num_parallel_calls=tf.data.AUTOTUNE)
     else:
-        ds = ds.batch(batch_size, drop_remainder=drop_remainder)
+        ds = ds.batch(batch_size, drop_remainder=drop_remainder, deterministic=False,
+                      num_parallel_calls=tf.data.AUTOTUNE if parallel_batch else None)
         if batch_transform:
             ds = ds.map(batch_transform, num_parallel_calls=tf.data.AUTOTUNE)
         if repeat:
